@@ -28,10 +28,28 @@ class GameWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         central_widget.setLayout(grid_layout)
 
+        self.mole_status = None
+        self.add_mole()
+
+    # add mole when all the buttons are blank
+    def add_mole(self):
+        if self.mole_status is None:
+            # choose a random button
+            row = random.randint(0, 3)
+            col = random.randint(0, 3)
+            # set that random button to mole
+            self.buttons[row][col].setText("Mole")
+            self.mole_status = (row, col)
+            self.print_mole_status = (row+1, col+1)
+            print (self.mole_status)
+
     # button actions
     def button_clicked(self, row, col):
         self.clicked_button = self.buttons[row][col]
-        pass
+        if (row, col) == self.mole_status:
+            self.buttons[row][col].setText("")
+            self.mole_status = None
+            self.add_mole()
 
 # start game
 app = QApplication(sys.argv)
