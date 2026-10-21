@@ -11,9 +11,11 @@ class GameWindow(QMainWindow):
         self.setWindowTitle ("Whac-A-Mole")
         self.setFixedSize (380, 400)
 
+        # set starting labels
         self.score_label = QLabel("Score: 0")
         self.time_label = QLabel("60s")
 
+        # Store labels evenly across
         heading_h_box = QHBoxLayout()
         heading_h_box.addWidget(self.score_label)
         heading_h_box.addStretch()
@@ -33,6 +35,7 @@ class GameWindow(QMainWindow):
                 button.clicked.connect(lambda clicked, r=row, c=col: self.button_clicked(r, c))
             self.buttons.append(row_buttons)
 
+        #create layout with everything evenly
         main_layout = QVBoxLayout()
         main_layout.addLayout(heading_h_box)
         main_layout.addLayout(grid_layout)
@@ -46,6 +49,13 @@ class GameWindow(QMainWindow):
         # starting score and mole
         self.player_score_counter = 0
         self.mole_status = None
+
+        # set up timer
+        self.time_left = 60
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_timer)
+        self.timer.start(1000)
+
         # start first mole
         self.add_mole()
 
@@ -75,8 +85,20 @@ class GameWindow(QMainWindow):
     def player_score(self):
         self.player_score_counter = self.player_score_counter + 1
         print (self.player_score_counter)
+        # update score label
         self.score_label.setText(f"Score: {self.player_score_counter}")
 
+    # update timer every second
+    def update_timer(self):
+        self.time_left = self.time_left - 1
+        self.time_label.setText(f"{self.time_left}s")
+        # stop game (disable buttons) when time runs out
+        if self.time_left == 0:
+            self.timer.stop()
+            for row in self.buttons:
+                for button in row:
+                    button.setEnabled(False)
+            
 
 # start game
 app = QApplication(sys.argv)
