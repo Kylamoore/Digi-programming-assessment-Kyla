@@ -18,17 +18,34 @@ class StartDialog(QDialog):
         self.time_input_choice.setMinimum(15)
         self.time_input_choice.setMaximum(60)
 
+        self.time_input_choice.textChanged.connect(self.check_button_valid)
+
         # make start button
-        start_button = QPushButton("Start")
-        start_button.clicked.connect(self.accept)
+        self.start_button = QPushButton("Start")
+        self.start_button.clicked.connect(self.accept)
 
         # add everything to the layout
         settings_main_layout = QVBoxLayout()
         settings_main_layout.addWidget(self.time_input_label)
         settings_main_layout.addWidget(self.time_input_choice)
-        settings_main_layout.addWidget(start_button)
+        settings_main_layout.addWidget(self.start_button)
 
         self.setLayout(settings_main_layout)
+
+    def get_game_time(self):
+        return self.time_input_choice.value()
+
+    def check_button_valid(self):
+        try:
+            current_number_choice = int(self.time_input_choice.text())
+        except ValueError:
+            current_number_choice = 0
+
+        if current_number_choice <= 60 and current_number_choice >= 15:
+            self.start_button.setEnabled(True)
+        else:
+            self.start_button.setEnabled(False)
+
 
 # start the dialog box to get game choices
 app = QApplication(sys.argv)
@@ -37,7 +54,7 @@ dialog_result = first_dialog.exec()
 
 # game window
 class GameWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, game_time):
         super().__init__()
 
         # set window presets
@@ -46,7 +63,7 @@ class GameWindow(QMainWindow):
 
         # set starting labels
         self.score_label = QLabel("Score: 0")
-        self.time_label = QLabel("60s")
+        self.time_label = QLabel(f"{game_time}s")
 
         # Store labels evenly across
         heading_h_box = QHBoxLayout()
@@ -84,7 +101,7 @@ class GameWindow(QMainWindow):
         self.mole_status = None
 
         # set up timer
-        self.time_left = 60
+        self.time_left = game_time
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_timer)
         self.timer.start(1000)
@@ -134,8 +151,9 @@ class GameWindow(QMainWindow):
             
 
 # start the game if the dialog box was succesful in what it was doing
-if first_dialog == QDialog.DialogCode.Accepted:
-    window = GameWindow()
+if dialog_result == QDialog.DialogCode.Accepted:
+    game_time = first_dialog.get_game_time()
+    window = GameWindow(game_time=game_time)
     window.show()
     sys.exit(app.exec())
 
