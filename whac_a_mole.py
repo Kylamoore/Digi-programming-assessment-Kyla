@@ -1,8 +1,41 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, QPushButton, QWidget, QLabel, QVBoxLayout, QHBoxLayout
+from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, QPushButton, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QDialog, QSpinBox
 import random
 from PyQt6.QtCore import QTimer
 
+# first dialog to ask for game settings
+class StartDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        # choose the elements of the dialog window
+        self.setWindowTitle ("Whac-A-Mole - Settings")
+        self. setFixedSize (200,200)
+
+        # make the spinbox and restrict its inputs
+        self.time_input_label = QLabel("Input a time between 15 and 60")
+        self.time_input_choice = QSpinBox()
+        self.time_input_choice.setMinimum(15)
+        self.time_input_choice.setMaximum(60)
+
+        # make start button
+        start_button = QPushButton("Start")
+        start_button.clicked.connect(self.accept)
+
+        # add everything to the layout
+        settings_main_layout = QVBoxLayout()
+        settings_main_layout.addWidget(self.time_input_label)
+        settings_main_layout.addWidget(self.time_input_choice)
+        settings_main_layout.addWidget(start_button)
+
+        self.setLayout(settings_main_layout)
+
+# start the dialog box to get game choices
+app = QApplication(sys.argv)
+first_dialog = StartDialog()
+dialog_result = first_dialog.exec()
+
+# game window
 class GameWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -100,8 +133,12 @@ class GameWindow(QMainWindow):
                     button.setEnabled(False)
             
 
-# start game
-app = QApplication(sys.argv)
-window = GameWindow()
-window.show()
-sys.exit(app.exec())
+# start the game if the dialog box was succesful in what it was doing
+if first_dialog == QDialog.DialogCode.Accepted:
+    window = GameWindow()
+    window.show()
+    sys.exit(app.exec())
+
+# close game if the dialog box was closed instead of "started" to pass to next window
+else:
+    sys.exit(0) # 0 is because the game cant give the computer a code when it finished(because it never started) so we give it one to make it happy :)
