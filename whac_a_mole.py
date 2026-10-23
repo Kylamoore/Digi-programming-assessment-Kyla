@@ -12,8 +12,16 @@ class StartDialog(QDialog):
         self.setWindowTitle ("Whac-A-Mole - Settings")
         self.setFixedSize (300,300)
 
-        # make the spinbox and restrict its inputs
-        self.time_input_label = QLabel("Input a time between 15 and 60")
+        # name input
+        self.type_name_heading = QLabel("Enter name:")
+        self.type_name_heading.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.type_name_box = QLineEdit()
+        self.type_name_box.setPlaceholderText("Name here")
+
+        self.type_name_box.textEdited.connect(self.check_button_valid)
+
+        # make the time input
+        self.time_input_label = QLabel("Input a time between 15 and 60:")
         self.time_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.time_input_choice = QLineEdit()
         self.time_input_choice.setPlaceholderText("Seconds")
@@ -28,6 +36,9 @@ class StartDialog(QDialog):
         # add everything to the layout
         settings_main_layout = QVBoxLayout()
         settings_main_layout.addStretch()
+        settings_main_layout.addWidget(self.type_name_heading)
+        settings_main_layout.addWidget(self.type_name_box)
+        settings_main_layout.addStretch()
         settings_main_layout.addWidget(self.time_input_label)
         settings_main_layout.addWidget(self.time_input_choice)
         settings_main_layout.addStretch()
@@ -37,9 +48,12 @@ class StartDialog(QDialog):
         # set the layout
         self.setLayout(settings_main_layout)
 
-    # make the game tie accesible
+    # make the game time accesible
     def get_game_time(self):
         return int(self.time_input_choice.text())
+
+    def get_player_name(self):
+        return (self.type_name_box.text())
 
     # check if the input is valid for time and disable button if it is not
     def check_button_valid(self):
@@ -48,7 +62,7 @@ class StartDialog(QDialog):
         except ValueError:
             current_number_choice = 0
 
-        if current_number_choice <= 60 and current_number_choice >= 15:
+        if current_number_choice <= 60 and current_number_choice >= 15 and self.type_name_box.text() != "":
             self.start_button.setEnabled(True)
         else:
             self.start_button.setEnabled(False)
@@ -56,12 +70,13 @@ class StartDialog(QDialog):
 
 # start the dialog box to get game choices
 app = QApplication(sys.argv)
+game_window = None
 first_dialog = StartDialog()
 dialog_result = first_dialog.exec()
 
 # game window
 class GameWindow(QMainWindow):
-    def __init__(self, game_time):
+    def __init__(self, game_time, player_name):
         super().__init__()
 
         # set window presets
@@ -106,6 +121,7 @@ class GameWindow(QMainWindow):
         # starting score and mole
         self.player_score_counter = 0
         self.mole_status = None
+        self.player_name = player_name
 
         # set up timer
         self.time_left = game_time
@@ -155,36 +171,71 @@ class GameWindow(QMainWindow):
             for row in self.buttons:
                 for button in row:
                     button.setEnabled(False)
-            self.end_dialog = EndDialog(self.player_score_counter)
+            self.end_dialog = EndDialog(self.player_score_counter, self.player_name, self)
             self.end_dialog.exec()
 
 class EndDialog(QDialog):
-    def __init__(self, end_score):
+    def __init__(self, end_score, player_name, game_window):
         super().__init__()
+        self.game_window = game_window
 
+        # make window
         self.setWindowTitle("Game Over!")
         self.setFixedSize(200,200)
 
-        game_over_label = QLabel("Game Over!")
-        game_over_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # make heading, name heading, name input and play again button
+        self.game_over_label = QLabel("Game Over!")
+        self.game_over_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        end_score_label = QLabel(str(end_score))
-        end_score_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.player_name_label = QLabel(player_name)
+        self.player_name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        play_again_button = QPushButton("Play Again")
+        self.end_score_label = QLabel(str(end_score))
+        self.end_score_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        self.play_again_button = QPushButton("Play Again")
+        self.play_again_button.clicked.connect(self.play_again_clicked)
+
+        # add everything into the layout
         end_screen_layout = QVBoxLayout()
         end_screen_layout.addStretch()
-        end_screen_layout.addWidget(game_over_label)
-        end_screen_layout.addWidget(end_score_label)
+        end_screen_layout.addWidget(self.game_over_label)
+        end_screen_layout.addStretch()
+        end_screen_layout.addWidget(self.player_name_label)
+        end_screen_layout.addWidget(self.end_score_label)
+        end_screen_layout.addStretch()
+        end_screen_layout.addWidget(self.play_again_button)
         end_screen_layout.addStretch()
 
         self.setLayout(end_screen_layout)
 
+    # make the play again button actually start the game again
+    def play_again_clicked(self):
+        global game_window
+
+        self.game_window.close()
+        self.accept()
+
+        new_dialog = StartDialog()
+
+        if new_dialog.exec() == QDialog.DialogCode.Accepted:
+            game_time = new_dialog.get_game_time()
+            player_name = new_dialog.get_player_name()
+
+            # start new game
+            game_window = GameWindow(game_time, player_name)
+            game_window.show()
+
+    def closeEvent(self, event):
+        self.game_window.close()
+        event.accept()
+
+
 # start the game if the dialog box was succesful in what it was doing
 if dialog_result == QDialog.DialogCode.Accepted:
     game_time = first_dialog.get_game_time()
-    window = GameWindow(game_time=game_time)
+    player_name = first_dialog.get_player_name()
+    window = GameWindow(game_time, player_name)
     window.show()
     sys.exit(app.exec())
 
