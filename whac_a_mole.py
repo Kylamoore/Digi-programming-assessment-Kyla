@@ -1,7 +1,7 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, QPushButton, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QDialog, QSpinBox
+from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, QPushButton, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QDialog, QLineEdit
 import random
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, Qt
 
 # first dialog to ask for game settings
 class StartDialog(QDialog):
@@ -10,31 +10,38 @@ class StartDialog(QDialog):
 
         # choose the elements of the dialog window
         self.setWindowTitle ("Whac-A-Mole - Settings")
-        self. setFixedSize (200,200)
+        self.setFixedSize (300,300)
 
         # make the spinbox and restrict its inputs
         self.time_input_label = QLabel("Input a time between 15 and 60")
-        self.time_input_choice = QSpinBox()
-        self.time_input_choice.setMinimum(15)
-        self.time_input_choice.setMaximum(60)
+        self.time_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.time_input_choice = QLineEdit()
+        self.time_input_choice.setPlaceholderText("Seconds")
 
-        self.time_input_choice.textChanged.connect(self.check_button_valid)
+        self.time_input_choice.textEdited.connect(self.check_button_valid)
 
         # make start button
         self.start_button = QPushButton("Start")
+        self.start_button.setEnabled(False)
         self.start_button.clicked.connect(self.accept)
 
         # add everything to the layout
         settings_main_layout = QVBoxLayout()
+        settings_main_layout.addStretch()
         settings_main_layout.addWidget(self.time_input_label)
         settings_main_layout.addWidget(self.time_input_choice)
+        settings_main_layout.addStretch()
         settings_main_layout.addWidget(self.start_button)
+        settings_main_layout.addStretch()
 
+        # set the layout
         self.setLayout(settings_main_layout)
 
+    # make the game tie accesible
     def get_game_time(self):
-        return self.time_input_choice.value()
+        return int(self.time_input_choice.text())
 
+    # check if the input is valid for time and disable button if it is not
     def check_button_valid(self):
         try:
             current_number_choice = int(self.time_input_choice.text())
@@ -148,7 +155,31 @@ class GameWindow(QMainWindow):
             for row in self.buttons:
                 for button in row:
                     button.setEnabled(False)
-            
+            self.end_dialog = EndDialog(self.player_score_counter)
+            self.end_dialog.exec()
+
+class EndDialog(QDialog):
+    def __init__(self, end_score):
+        super().__init__()
+
+        self.setWindowTitle("Game Over!")
+        self.setFixedSize(200,200)
+
+        game_over_label = QLabel("Game Over!")
+        game_over_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        end_score_label = QLabel(str(end_score))
+        end_score_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        play_again_button = QPushButton("Play Again")
+
+        end_screen_layout = QVBoxLayout()
+        end_screen_layout.addStretch()
+        end_screen_layout.addWidget(game_over_label)
+        end_screen_layout.addWidget(end_score_label)
+        end_screen_layout.addStretch()
+
+        self.setLayout(end_screen_layout)
 
 # start the game if the dialog box was succesful in what it was doing
 if dialog_result == QDialog.DialogCode.Accepted:
