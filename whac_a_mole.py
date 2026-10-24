@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, QPushButton, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QDialog, QLineEdit
+from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, QPushButton, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QDialog, QLineEdit, QMessageBox
 import random
 from PyQt6.QtCore import QTimer, Qt
 
@@ -87,6 +87,9 @@ class GameWindow(QMainWindow):
         self.score_label = QLabel("Score: 0")
         self.time_label = QLabel(f"{game_time}s")
 
+        # make time avaliable for end screen
+        self.game_time = game_time
+
         # Store labels evenly across
         heading_h_box = QHBoxLayout()
         heading_h_box.addWidget(self.score_label)
@@ -121,6 +124,7 @@ class GameWindow(QMainWindow):
         # starting score and mole
         self.player_score_counter = 0
         self.mole_status = None
+        self.old_mole = None
         self.player_name = player_name
 
         # set up timer
@@ -132,17 +136,27 @@ class GameWindow(QMainWindow):
         # start first mole
         self.add_mole()
 
+    def pause_before_mole(self):
+        if self.mole_status is None:
+            time_waiting = random.randint(50, 200)
+            print (f"waiting{time_waiting}")
+            QTimer.singleShot(time_waiting, self.add_mole)
+
     # add mole when all the buttons are blank
     def add_mole(self):
-        if self.mole_status is None:
-            # choose a random button
+        # choose a random button
+        row = random.randint(0, 3)
+        col = random.randint(0, 3)
+        # set that random button to mole if it is not the same as previous mole
+        while self.old_mole == (row, col):
             row = random.randint(0, 3)
             col = random.randint(0, 3)
-            # set that random button to mole
-            self.buttons[row][col].setText("Mole")
-            self.mole_status = (row, col)
-            self.print_mole_status = (row+1, col+1)
-            print (self.mole_status)
+            print ("dupe caught!")
+        self.buttons[row][col].setText("Mole")
+        self.mole_status = (row, col)
+        self.old_mole = (row, col)
+        self.print_mole_status = (row+1, col+1)
+        print (self.print_mole_status)
 
     # button actions
     def button_clicked(self, row, col):
@@ -152,7 +166,7 @@ class GameWindow(QMainWindow):
             self.buttons[row][col].setText("")
             self.mole_status = None
             self.player_score()
-            self.add_mole()
+            self.pause_before_mole()
 
     # add a point to the players score
     def player_score(self):
@@ -209,15 +223,19 @@ class EndDialog(QDialog):
 
         self.setLayout(end_screen_layout)
 
+        self.append_score(end_score, player_name)
+
     # make the play again button actually start the game again
     def play_again_clicked(self):
         global game_window
 
+        # close old game window when play again is clicked
         self.game_window.close()
         self.accept()
 
         new_dialog = StartDialog()
 
+        #if starting again get the new/reset the time and name and start
         if new_dialog.exec() == QDialog.DialogCode.Accepted:
             game_time = new_dialog.get_game_time()
             player_name = new_dialog.get_player_name()
@@ -226,6 +244,14 @@ class EndDialog(QDialog):
             game_window = GameWindow(game_time, player_name)
             game_window.show()
 
+    def append_score(self, end_score, player_name):
+        try:
+            with open("whack_a_mole_scores.txt", "a") as f:
+                f.write(f"{self.game_window.game_time}, {end_score}, {player_name}")
+        except IOError as e:
+            QMessageBox.critical(self, "File Error", f"Could not write to file.txt: {e}")
+    
+    # close the game window if the end dialog is closed due to pushing 'x' instead of playing again.
     def closeEvent(self, event):
         self.game_window.close()
         event.accept()
