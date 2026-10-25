@@ -1,8 +1,8 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, QPushButton, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QDialog, QLineEdit, QMessageBox
 import random
-from PyQt6.QtCore import QTimer, Qt
-from PyQt6.QtGui import QFont, QFontDatabase
+from PyQt6.QtCore import QTimer, Qt, QSize
+from PyQt6.QtGui import QIcon # QFont, QFontDatabase
 import os
 
 # first dialog to ask for game settings
@@ -135,9 +135,14 @@ class GameWindow(QMainWindow):
                 button.setFixedSize(70, 70)
                 grid_layout.addWidget(button, row, col)
                 row_buttons.append(button)
-                button.clicked.connect(lambda clicked, r=row, c=col: self.button_clicked(r, c))
+                hole_photo = QIcon()
+                hole_photo.addFile("oval hole.png", QSize(67, 60), QIcon.Mode.Normal)
+                hole_photo.addFile("oval hole.png", QSize(67, 60), QIcon.Mode.Disabled)
+                button.clicked.connect(lambda clicked, r=row, c=col: self.button_clicked(r, c, hole_photo))
                 button.setStyleSheet("QPushButton {background-color: #6e5531; border: 2px solid #5e4726; border-radius: 6px}" \
         "QPushButton:disabled {background-color: #866a43; border: 2px solid #5e4726; border-radius: 6px}")
+                button.setIcon(hole_photo)
+                button.setIconSize(QSize(67, 60))
             self.buttons.append(row_buttons) 
 
         #create layout with everything evenly
@@ -182,18 +187,24 @@ class GameWindow(QMainWindow):
             row = random.randint(0, 3)
             col = random.randint(0, 3)
             print ("dupe caught!")
-        self.buttons[row][col].setText("Mole")
+
+        mole_photo = QIcon()
+        mole_photo.addFile("mole_with_grass.png", QSize(60, 60), QIcon.Mode.Normal)
+        mole_photo.addFile("mole_with_grass.png", QSize(60, 60), QIcon.Mode.Disabled)
+
+        self.buttons[row][col].setIcon(mole_photo)
+        self.buttons[row][col].setIconSize(QSize(60, 60))
         self.mole_status = (row, col)
         self.old_mole = (row, col)
         self.print_mole_status = (row+1, col+1)
         print (self.print_mole_status)
 
     # button actions
-    def button_clicked(self, row, col):
+    def button_clicked(self, row, col, hole_photo):
         self.clicked_button = self.buttons[row][col]
         # if the button that was clicked is actually a mole, set it blank and add point
         if (row, col) == self.mole_status:
-            self.buttons[row][col].setText("")
+            self.buttons[row][col].setIcon(QIcon(hole_photo))
             self.mole_status = None
             self.player_score()
             self.pause_before_mole()
@@ -225,30 +236,37 @@ class EndDialog(QDialog):
 
         # make window
         self.setWindowTitle("Game Over!")
-        self.setFixedSize(200,200)
+        self.setFixedSize(220,250)
         self.setStyleSheet("background-color: #836539")
 
         # make heading, name heading, name input and play again button
         self.game_over_label = QLabel("Game Over!")
+        self.game_over_label.setStyleSheet("color: #cd9f74; font-weight: bold; font-size: 25px")
         self.game_over_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.player_name_label = QLabel(player_name)
+        self.player_name_label.setStyleSheet("color: #cd9f74; font-weight: bold; font-size: 15px")
         self.player_name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.end_score_label = QLabel(str(end_score))
+        self.end_score_label.setStyleSheet("color: #cd9f74; font-weight: 800; font-size: 60px")
         self.end_score_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.play_again_button = QPushButton("Play Again")
         self.play_again_button.clicked.connect(self.play_again_clicked)
-        self.play_again_button.setStyleSheet ("background-color: #6e5531; color: #cd9f74; border: 2px solid #5e4726; border-radius: 6px")
+        self.play_again_button.setStyleSheet ("background-color: #6e5531; color: #cd9f74; border: 2px solid #5e4726; border-radius: 6px; font-weight: bold; font-size: 15px")
+
+        main_stats_layout = QVBoxLayout()
+        main_stats_layout.setSpacing(1)
+        main_stats_layout.addWidget(self.player_name_label)
+        main_stats_layout.addWidget(self.end_score_label)
 
         # add everything into the layout
         end_screen_layout = QVBoxLayout()
         end_screen_layout.addStretch()
         end_screen_layout.addWidget(self.game_over_label)
         end_screen_layout.addStretch()
-        end_screen_layout.addWidget(self.player_name_label)
-        end_screen_layout.addWidget(self.end_score_label)
+        end_screen_layout.addLayout(main_stats_layout)
         end_screen_layout.addStretch()
         end_screen_layout.addWidget(self.play_again_button)
         end_screen_layout.addStretch()
