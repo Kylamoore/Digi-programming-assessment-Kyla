@@ -2,6 +2,8 @@ import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, QPushButton, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QDialog, QLineEdit, QMessageBox
 import random
 from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtGui import QFont, QFontDatabase
+import os
 
 # first dialog to ask for game settings
 class StartDialog(QDialog):
@@ -11,38 +13,61 @@ class StartDialog(QDialog):
         # choose the elements of the dialog window
         self.setWindowTitle ("Whac-A-Mole - Settings")
         self.setFixedSize (300,300)
+        self.setStyleSheet("background-color: #836539")
 
         # name input
         self.type_name_heading = QLabel("Enter name:")
         self.type_name_heading.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.type_name_heading.setStyleSheet("color: #cd9f74; font-weight: bold; font-size: 15px")
         self.type_name_box = QLineEdit()
+        self.type_name_box.setFixedSize(250, 25)
         self.type_name_box.setPlaceholderText("Name here")
+        self.type_name_box.setStyleSheet ("background-color: #6e5531; color: #cd9f74; border: 2px solid #5e4726; border-radius: 6px")
+        type_name_center_layout = QHBoxLayout()
+        type_name_center_layout.addStretch()
+        type_name_center_layout.addWidget(self.type_name_box)
+        type_name_center_layout.addStretch()
 
         self.type_name_box.textEdited.connect(self.check_button_valid)
 
         # make the time input
         self.time_input_label = QLabel("Input a time between 15 and 60:")
         self.time_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.time_input_label.setStyleSheet("color: #cd9f74; font-weight: bold; font-size: 15px")
         self.time_input_choice = QLineEdit()
+        self.time_input_choice.setFixedSize(250, 25)
         self.time_input_choice.setPlaceholderText("Seconds")
+        self.time_input_choice.setStyleSheet ("background-color: #6e5531; color: #cd9f74; border: 2px solid #5e4726; border-radius: 6px")
+        time_choice_center_layout = QHBoxLayout()
+        time_choice_center_layout.addStretch()
+        time_choice_center_layout.addWidget(self.time_input_choice)
+        time_choice_center_layout.addStretch()
 
         self.time_input_choice.textEdited.connect(self.check_button_valid)
 
         # make start button
         self.start_button = QPushButton("Start")
+        self.start_button.setFixedSize (200,30)
         self.start_button.setEnabled(False)
         self.start_button.clicked.connect(self.accept)
+        self.start_button.setStyleSheet ("QPushButton {background-color: #6e5531; color: #cd9f74; border: 2px solid #5e4726; border-radius: 6px; font-weight: bold; font-size: 15px}" \
+        "QPushButton:disabled {background-color: #866a43; color: #c0a58b; border: 2px solid #5e4726; border-radius: 6px; font-weight: bold; font-size: 15px}")
+
+        start_button_center_layout = QHBoxLayout()
+        start_button_center_layout.addStretch()
+        start_button_center_layout.addWidget(self.start_button)
+        start_button_center_layout.addStretch()
 
         # add everything to the layout
         settings_main_layout = QVBoxLayout()
         settings_main_layout.addStretch()
         settings_main_layout.addWidget(self.type_name_heading)
-        settings_main_layout.addWidget(self.type_name_box)
+        settings_main_layout.addLayout(type_name_center_layout)
         settings_main_layout.addStretch()
         settings_main_layout.addWidget(self.time_input_label)
-        settings_main_layout.addWidget(self.time_input_choice)
+        settings_main_layout.addLayout(time_choice_center_layout)
         settings_main_layout.addStretch()
-        settings_main_layout.addWidget(self.start_button)
+        settings_main_layout.addLayout(start_button_center_layout)
         settings_main_layout.addStretch()
 
         # set the layout
@@ -82,10 +107,13 @@ class GameWindow(QMainWindow):
         # set window presets
         self.setWindowTitle ("Whac-A-Mole")
         self.setFixedSize (380, 400)
+        self.setStyleSheet("background-color: #836539")
 
         # set starting labels
         self.score_label = QLabel("Score: 0")
+        self.score_label.setStyleSheet("color: #cd9f74; font-weight: bold; font-size: 15px")
         self.time_label = QLabel(f"{game_time}s")
+        self.time_label.setStyleSheet("color: #cd9f74; font-weight: bold; font-size: 15px")
 
         # make time avaliable for end screen
         self.game_time = game_time
@@ -108,7 +136,9 @@ class GameWindow(QMainWindow):
                 grid_layout.addWidget(button, row, col)
                 row_buttons.append(button)
                 button.clicked.connect(lambda clicked, r=row, c=col: self.button_clicked(r, c))
-            self.buttons.append(row_buttons)
+                button.setStyleSheet("QPushButton {background-color: #6e5531; border: 2px solid #5e4726; border-radius: 6px}" \
+        "QPushButton:disabled {background-color: #866a43; border: 2px solid #5e4726; border-radius: 6px}")
+            self.buttons.append(row_buttons) 
 
         #create layout with everything evenly
         main_layout = QVBoxLayout()
@@ -139,7 +169,7 @@ class GameWindow(QMainWindow):
     def pause_before_mole(self):
         if self.mole_status is None:
             time_waiting = random.randint(50, 200)
-            print (f"waiting{time_waiting}")
+            print (f"waiting {time_waiting}")
             QTimer.singleShot(time_waiting, self.add_mole)
 
     # add mole when all the buttons are blank
@@ -196,6 +226,7 @@ class EndDialog(QDialog):
         # make window
         self.setWindowTitle("Game Over!")
         self.setFixedSize(200,200)
+        self.setStyleSheet("background-color: #836539")
 
         # make heading, name heading, name input and play again button
         self.game_over_label = QLabel("Game Over!")
@@ -209,6 +240,7 @@ class EndDialog(QDialog):
 
         self.play_again_button = QPushButton("Play Again")
         self.play_again_button.clicked.connect(self.play_again_clicked)
+        self.play_again_button.setStyleSheet ("background-color: #6e5531; color: #cd9f74; border: 2px solid #5e4726; border-radius: 6px")
 
         # add everything into the layout
         end_screen_layout = QVBoxLayout()
@@ -247,7 +279,7 @@ class EndDialog(QDialog):
     def append_score(self, end_score, player_name):
         try:
             with open("whack_a_mole_scores.txt", "a") as f:
-                f.write(f"{self.game_window.game_time}, {end_score}, {player_name}")
+                f.write(f"{self.game_window.game_time}s, {end_score}, {player_name}\n")
         except IOError as e:
             QMessageBox.critical(self, "File Error", f"Could not write to file.txt: {e}")
     
